@@ -73,7 +73,7 @@
   .top-row{ justify-content:space-between; align-items:flex-start; }
   .headline-row{ align-items:flex-end; gap:5vw; margin-top:2vh; }
 
-  .clockbox{ text-align:right; min-height:9vh; margin-top:6vh; }
+  .clockbox{ text-align:right; position:absolute; top:6vh; right:0; white-space:nowrap; z-index:1; }
   .clock-time{ font-size:11.5vh; font-weight:600; line-height:1; letter-spacing:0.5px; }
   .clock-date{ font-size:11.5vh; font-weight:500; color:var(--ink-soft); line-height:1; }
   .clock-date.hidden, .clock-time.hidden{ display:none; }
@@ -83,13 +83,13 @@
   .temp-block .label{ font-size:2.6vh; text-transform:uppercase; letter-spacing:2px; color:var(--ink-soft); font-weight:500; margin-bottom:0.5vh; }
   .temp-value{ font-size:18vh; font-weight:600; line-height:0.85; position:relative; display:inline-block; letter-spacing:-2px; }
   .temp-value sup{ font-size:0.32em; font-weight:400; color:var(--ink-soft); vertical-align:super; }
-  .high{ font-size:5vh; color:var(--ink-soft); margin-left:1.2vw; font-weight:500; font-family:'JetBrains Mono', monospace; }
+  .high{ font-size:5vh; color:var(--ink-soft); font-weight:500; font-family:'JetBrains Mono', monospace; white-space:nowrap; }
   .high b{ color:var(--ink); font-weight:600; }
   .high sup{ font-size:0.5em; font-weight:400; color:var(--ink-soft); }
   body.night .high b{ color:#eef3f6; }
 
-  .stat-row{ gap:4vw; margin-top:2vh; }
-  .stat{ display:flex; align-items:baseline; gap:0.8vw; font-size:5.2vh; color:var(--ink-soft); font-weight:500; }
+  .stat-row{ gap:3vw; margin-top:2vh; flex-wrap:nowrap; }
+  .stat{ display:flex; align-items:center; gap:0.6vw; font-size:3.4vh; color:var(--ink-soft); font-weight:500; white-space:nowrap; flex-wrap:nowrap; flex:none; }
   .stat b{ color:var(--ink); font-weight:600; font-family:'JetBrains Mono', monospace; }
   body.night .stat b{ color:#eef3f6; }
 
@@ -145,11 +145,9 @@
   <div class="row top-row">
     <div class="temp-block">
       <div class="eyebrow"><span class="dash"></span>Enfield, UK &middot; 51.65&deg;N 0.08&deg;W</div>
-      <div class="headline-row" style="margin-top:0;">
-        <div>
-          <span class="temp-value" id="temp-val">--<sup>&deg;C</sup></span>
-          <span class="high" id="temp-high">Max temp <b>--<sup>&deg;C</sup></b></span>
-        </div>
+      <div class="headline-row" style="margin-top:0; flex-direction:column; align-items:flex-start; gap:0.5vh;">
+        <span class="temp-value" id="temp-val">--<sup>&deg;C</sup></span>
+        <span class="high" id="temp-high">Max temp <b>--<sup>&deg;C</sup></b></span>
       </div>
     </div>
     <div class="clockbox">
@@ -247,11 +245,11 @@ function renderScene(weatherCode, isNight){
   let svg = '';
 
   if(!isNight){
-    svg += `<circle cx="860" cy="110" r="70" fill="var(--sun)" opacity="${cloudy ? 0.5 : 0.9}"/>`;
+    svg += `<circle cx="830" cy="460" r="70" fill="var(--sun)" opacity="${cloudy ? 0.5 : 0.9}"/>`;
   } else {
-    svg += `<circle cx="860" cy="110" r="46" fill="#eef3f6" opacity="0.85"/>`;
+    svg += `<circle cx="830" cy="460" r="46" fill="#eef3f6" opacity="0.85"/>`;
     for(let i=0;i<18;i++){
-      svg += `<circle cx="${(i*57)%1000}" cy="${(i*83)%260+20}" r="1.6" fill="#ffffff" opacity="${0.3+(i%5)*0.1}"/>`;
+      svg += `<circle cx="${650 + (i*23)%320}" cy="${300 + (i*41)%280}" r="1.6" fill="#ffffff" opacity="${0.3+(i%5)*0.1}"/>`;
     }
   }
 
