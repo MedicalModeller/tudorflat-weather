@@ -24,7 +24,7 @@
     --sun:#e9b64f;
     --cloud:#ffffff;
     --cloud-op:0.55;
-    --clock-color:#173a63;
+    --clock-color:#1e6fd9;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html,body{
@@ -66,7 +66,7 @@
   body.night{ color:#eef3f6; }
   body.night .ink-soft{ color:#a9bac6 !important; }
   body.night .stroke{ stroke:rgba(255,255,255,0.5) !important; }
-  body.night{ --clock-color:#9db7dd; }
+  body.night{ --clock-color:#5fa8ff; }
 
   #scene{ position:absolute; inset:0; z-index:0; }
 
@@ -81,17 +81,18 @@
   .eyebrow{ font-family:'JetBrains Mono', monospace; font-size:2.1vh; letter-spacing:3px; text-transform:uppercase; color:var(--ink-faint); margin-bottom:1vh; display:flex; align-items:center; gap:0.8vw; }
   .eyebrow .dash{ width:2.2vw; height:1px; background:var(--ink-faint); display:inline-block; }
   .temp-block .label{ font-size:2.6vh; text-transform:uppercase; letter-spacing:2px; color:var(--ink-soft); font-weight:500; margin-bottom:0.5vh; }
-  .temp-value{ font-size:18vh; font-weight:600; line-height:0.85; position:relative; display:inline-block; letter-spacing:-2px; }
+  .temp-value{ font-size:22vh; font-weight:600; line-height:0.85; position:relative; display:inline-block; letter-spacing:-2px; }
   .temp-value sup{ font-size:0.32em; font-weight:400; color:var(--ink-soft); vertical-align:super; }
   .high{ font-size:5vh; color:var(--ink-soft); font-weight:500; font-family:'JetBrains Mono', monospace; white-space:nowrap; }
   .high b{ color:var(--ink); font-weight:600; }
   .high sup{ font-size:0.5em; font-weight:400; color:var(--ink-soft); }
   body.night .high b{ color:#eef3f6; }
 
-  .stat-col{ display:flex; flex-direction:column; gap:1.8vh; margin-top:2vh; }
-  .stat{ display:flex; align-items:center; gap:1vw; font-size:6vh; color:var(--ink-soft); font-weight:500; white-space:nowrap; padding-bottom:1.8vh; border-bottom:1px solid var(--line); }
+  .stat-col{ display:flex; flex-direction:column; gap:1.8vh; margin-top:2vh; width:72vh; }
+  .stat{ display:flex; align-items:center; justify-content:space-between; gap:1vw; font-size:6vh; color:var(--ink-soft); font-weight:500; white-space:nowrap; padding-bottom:1.8vh; border-bottom:1px solid var(--line); }
+  .stat .stat-label{ display:flex; align-items:center; gap:0.8vw; }
   .stat:last-child{ border-bottom:none; padding-bottom:0; }
-  .stat b{ color:var(--ink); font-weight:600; font-family:'JetBrains Mono', monospace; }
+  .stat b{ color:var(--ink); font-weight:600; font-family:'JetBrains Mono', monospace; text-align:right; }
   body.night .stat b{ color:#eef3f6; }
   body.night .stat{ border-bottom-color:rgba(255,255,255,0.14); }
 
@@ -133,7 +134,7 @@
   <div class="row top-row">
     <div class="temp-block">
       <div class="eyebrow"><span class="dash"></span>Enfield, UK &middot; 51.65&deg;N 0.08&deg;W</div>
-      <div class="headline-row" style="margin-top:0; flex-direction:column; align-items:flex-start; gap:0.5vh;">
+      <div class="headline-row" style="margin-top:0; display:flex; flex-direction:column; align-items:flex-start; gap:0.5vh;">
         <span class="temp-value" id="temp-val">--<sup>&deg;C</sup></span>
         <span class="high" id="temp-high">Max temp <b>--<sup>&deg;C</sup></b></span>
       </div>
@@ -146,13 +147,16 @@
 
   <div>
     <div class="stat-col">
-      <div class="stat">&#128167; Humidity <b id="humidity-val">--%</b></div>
-      <div class="stat">&#9730; Rain next hour <b id="rain-val">--%</b></div>
+      <div class="stat"><span class="stat-label">&#9730; Rain next hour</span> <b id="rain-val">--%</b></div>
+      <div class="stat"><span class="stat-label">&#128167; Humidity</span> <b id="humidity-val">--%</b></div>
       <div class="stat">
-        <svg id="wind-arrow" width="1em" height="1em" viewBox="0 0 24 24" style="transform:rotate(0deg); transition:transform 0.6s ease; flex:none; align-self:center; transform-origin:center;">
-          <path d="M12 2 L18.5 16 L12 12 L5.5 16 Z" fill="currentColor"/>
-        </svg>
-        Wind <b id="wind-val">-- kt (F-)</b>
+        <span class="stat-label">
+          <svg id="wind-arrow" width="1em" height="1em" viewBox="0 0 24 24" style="transform:rotate(0deg); transition:transform 0.6s ease; flex:none; align-self:center; transform-origin:center;">
+            <path d="M12 2 L18.5 16 L12 12 L5.5 16 Z" fill="currentColor"/>
+          </svg>
+          Wind
+        </span>
+        <b id="wind-val">-- kt (F-)</b>
       </div>
     </div>
 
