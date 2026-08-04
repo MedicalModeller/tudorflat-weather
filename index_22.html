@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Enfield Weather</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-day-top:#cfe4ee;
+    --sky-day-bot:#eaf2f5;
+    --sky-night-top:#0d1b2a;
+    --sky-night-bot:#182a3c;
+    --ink:#16232e;
+    --ink-soft:#4a5b68;
+    --ink-faint:#8a99a3;
+    --paper:#f4f7f8;
+    --line:#c7d3d8;
+    --accent:#2f6fa8;
+    --amber:#c98a2b;
+    --alert:#b5482b;
+    --sun:#e9b64f;
+    --cloud:#ffffff;
+    --cloud-op:0.55;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{
+    width:100%; height:100%;
+    background:var(--sky-day-bot);
+    font-family:'Space Grotesk', sans-serif;
+    color:var(--ink);
+    overflow:hidden;
+  }
+  body{
+    display:flex;
+    align-items:stretch;
+    justify-content:stretch;
+  }
+  #stage{
+    position:relative;
+    width:100%;
+    height:100vh;
+    background:linear-gradient(var(--sky-day-top), var(--sky-day-bot));
+    transition:background 1.2s ease;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:4vh 4vw;
+    overflow:hidden;
+    border:2px solid rgba(22,35,46,0.14);
+    outline:1.4vh solid var(--sky-day-bot);
+    outline-offset:-1.4vh;
+  }
+  body.night #stage{ outline-color:var(--sky-night-bot); border-color:rgba(255,255,255,0.14); }
+  .rivet{
+    position:absolute; width:0.9vh; height:0.9vh; border-radius:50%;
+    background:rgba(22,35,46,0.18); z-index:2;
+  }
+  body.night .rivet{ background:rgba(255,255,255,0.22); }
+  .rivet.tl{ top:1.6vh; left:1.6vh; } .rivet.tr{ top:1.6vh; right:1.6vh; }
+  .rivet.bl{ bottom:1.6vh; left:1.6vh; } .rivet.br{ bottom:1.6vh; right:1.6vh; }
+  body.night #stage{ background:linear-gradient(var(--sky-night-top), var(--sky-night-bot)); }
+  body.night{ color:#eef3f6; }
+  body.night .ink-soft{ color:#a9bac6 !important; }
+  body.night .panel{ background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.14); }
+  body.night .stroke{ stroke:rgba(255,255,255,0.5) !important; }
+
+  #scene{ position:absolute; inset:0; z-index:0; }
+
+  .row{ position:relative; z-index:1; display:flex; }
+  .top-row{ justify-content:space-between; align-items:flex-start; }
+  .headline-row{ align-items:flex-end; gap:5vw; margin-top:2vh; }
+
+  .clockbox{ text-align:right; min-height:9vh; margin-top:6vh; }
+  .clock-time{ font-size:11.5vh; font-weight:600; line-height:1; letter-spacing:0.5px; }
+  .clock-date{ font-size:11.5vh; font-weight:500; color:var(--ink-soft); line-height:1; }
+  .clock-date.hidden, .clock-time.hidden{ display:none; }
+
+  .eyebrow{ font-family:'JetBrains Mono', monospace; font-size:2.1vh; letter-spacing:3px; text-transform:uppercase; color:var(--ink-faint); margin-bottom:1vh; display:flex; align-items:center; gap:0.8vw; }
+  .eyebrow .dash{ width:2.2vw; height:1px; background:var(--ink-faint); display:inline-block; }
+  .temp-block .label{ font-size:2.6vh; text-transform:uppercase; letter-spacing:2px; color:var(--ink-soft); font-weight:500; margin-bottom:0.5vh; }
+  .temp-value{ font-size:18vh; font-weight:600; line-height:0.85; position:relative; display:inline-block; letter-spacing:-2px; }
+  .temp-value sup{ font-size:0.32em; font-weight:400; color:var(--ink-soft); vertical-align:super; }
+  .high{ font-size:5vh; color:var(--ink-soft); margin-left:1.2vw; font-weight:500; font-family:'JetBrains Mono', monospace; }
+  .high b{ color:var(--ink); font-weight:600; }
+  .high sup{ font-size:0.5em; font-weight:400; color:var(--ink-soft); }
+  body.night .high b{ color:#eef3f6; }
+
+  .stat-row{ gap:4vw; margin-top:2vh; }
+  .stat{ display:flex; align-items:baseline; gap:0.8vw; font-size:5.2vh; color:var(--ink-soft); font-weight:500; }
+  .stat b{ color:var(--ink); font-weight:600; font-family:'JetBrains Mono', monospace; }
+  body.night .stat b{ color:#eef3f6; }
+
+  .panel{
+    background:rgba(255,255,255,0.5);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:2.2vh 2.5vw 1.4vh;
+    margin-top:2vh;
+  }
+  .panel-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1vh; }
+  .panel-title{ font-size:2.4vh; text-transform:uppercase; letter-spacing:2px; color:var(--ink-soft); font-weight:500; }
+  .panel-value{ font-family:'JetBrains Mono', monospace; font-size:3vh; font-weight:500; }
+
+  #baro-svg{ width:100%; flex:1; min-height:0; display:block; }
+  .grid-line{ stroke:var(--line); stroke-width:1; }
+  .baro-line{ fill:none; stroke:var(--accent); stroke-width:2.5; }
+  .baro-dot{ fill:var(--accent); }
+  body.night .baro-line, body.night .baro-dot{ stroke:#6fb4e6; fill:#6fb4e6; }
+
+  #tfl{
+    display:flex;
+    align-items:center;
+    gap:1vw;
+    background:rgba(197,110,43,0.14);
+    border:1px solid var(--alert);
+    border-radius:8px;
+    padding:1.6vh 2vw;
+    margin-top:2vh;
+    width:fit-content;
+    opacity:0;
+    visibility:hidden;
+    transition:opacity 0.4s ease;
+  }
+  #tfl.show{ opacity:1; visibility:visible; }
+  #tfl .dot{ width:2.2vh; height:2.2vh; border-radius:50%; background:var(--alert); flex:none; }
+  #tfl-text{ font-size:3vh; font-weight:500; color:var(--alert); }
+
+  .footer{ font-family:'JetBrains Mono', monospace; font-size:1.9vh; letter-spacing:1px; color:var(--ink-faint); text-align:center; margin-top:1vh; z-index:1; position:relative; }
+
+  #offscreen{
+    position:fixed; inset:0; background:#000; z-index:50;
+    display:none;
+  }
+  #offscreen.show{ display:block; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+  <svg id="scene" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice"></svg>
+
+  <div class="row top-row">
+    <div class="temp-block">
+      <div class="eyebrow"><span class="dash"></span>Enfield, UK &middot; 51.65&deg;N 0.08&deg;W</div>
+      <div class="headline-row" style="margin-top:0;">
+        <div>
+          <span class="temp-value" id="temp-val">--<sup>&deg;C</sup></span>
+          <span class="high" id="temp-high">Max temp <b>--<sup>&deg;C</sup></b></span>
+        </div>
+      </div>
+    </div>
+    <div class="clockbox">
+      <div class="clock-time" id="clock-time">--:--</div>
+      <div class="clock-date hidden" id="clock-date">-</div>
+    </div>
+  </div>
+
+  <div>
+    <div class="row stat-row">
+      <div class="stat">&#128167; Humidity <b id="humidity-val">--%</b></div>
+      <div class="stat">&#9730; Rain next hour <b id="rain-val">--%</b></div>
+      <div class="stat">
+        <svg id="wind-arrow" width="1em" height="1em" viewBox="0 0 24 24" style="transform:rotate(0deg); transition:transform 0.6s ease; flex:none; align-self:center; transform-origin:center;">
+          <path d="M12 2 L18.5 16 L12 12 L5.5 16 Z" fill="currentColor"/>
+        </svg>
+        Wind <b id="wind-val">-- kt (F-)</b>
+      </div>
+    </div>
+
+    <div class="row" style="gap:2vw; align-items:flex-start; height:auto;">
+      <div class="panel" style="flex:none; width:52vh; height:52vh; margin-top:2vh; display:flex; flex-direction:column;">
+        <div class="panel-head">
+          <span class="panel-title">Pressure &middot; last 6 hours</span>
+          <span class="panel-value" id="pressure-val">---- hPa</span>
+        </div>
+        <svg id="baro-svg" viewBox="0 0 300 200" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+
+    <div id="tfl">
+      <span class="dot"></span>
+      <span id="tfl-text">Piccadilly Line: —</span>
+    </div>
+
+    <div class="footer">Enfield dashboard &middot; updates every 10 min</div>
+  </div>
+</div>
+
+<div id="offscreen"></div>
+
+<script>
+/* ---------- CONFIG ---------- */
+const LAT = 51.6523, LON = -0.0809; // Enfield, London
+const ON_HOUR = 7, OFF_HOUR = 0; // display active 07:00–24:00
+const REFRESH_MS = 10 * 60 * 1000; // 10 minutes
+const CLOCK_FLIP_MS = 8000; // flip clock/date every 8s
+
+/* ---------- SCREEN ON/OFF WINDOW ---------- */
+function applyScreenWindow(){
+  const h = new Date().getHours();
+  // Active 07:00–23:59, off 00:00–06:59 (OFF_HOUR = 0 means "off resumes at midnight")
+  const isOn = OFF_HOUR === 0 ? (h >= ON_HOUR) : (h >= ON_HOUR && h < OFF_HOUR);
+  document.getElementById('offscreen').classList.toggle('show', !isOn);
+}
+setInterval(applyScreenWindow, 30 * 1000);
+applyScreenWindow();
+
+/* ---------- CLOCK / DATE FLIP ---------- */
+const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function ordinal(n){
+  const s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+function renderClock(){
+  const now = new Date();
+  let hh = now.getHours().toString().padStart(2,'0');
+  let mm = now.getMinutes().toString().padStart(2,'0');
+  document.getElementById('clock-time').textContent = `${hh}:${mm}`;
+  document.getElementById('clock-date').textContent =
+    `${dayNames[now.getDay()]} ${ordinal(now.getDate())} ${monthNames[now.getMonth()]}`;
+  const isNight = now.getHours() >= 20 || now.getHours() < 7;
+  document.body.classList.toggle('night', isNight);
+}
+setInterval(renderClock, 1000 * 15);
+renderClock();
+
+let flipShowingDate = false;
+function flipClock(){
+  flipShowingDate = !flipShowingDate;
+  document.getElementById('clock-time').classList.toggle('hidden', flipShowingDate);
+  document.getElementById('clock-date').classList.toggle('hidden', !flipShowingDate);
+}
+setInterval(flipClock, CLOCK_FLIP_MS);
+
+/* ---------- SKY SCENE ---------- */
+function renderScene(weatherCode, isNight){
+  const scene = document.getElementById('scene');
+  const thunder = [95,96,99].includes(weatherCode);
+  const snow = [71,73,75,77,85,86].includes(weatherCode);
+  const fog = [45,48].includes(weatherCode);
+  const rainy = !snow && !thunder && [51,53,55,56,57,61,63,65,66,67,80,81,82].includes(weatherCode);
+  const cloudy = [1,2,3].includes(weatherCode) || fog || rainy || snow || thunder;
+  let svg = '';
+
+  if(!isNight){
+    svg += `<circle cx="860" cy="110" r="70" fill="var(--sun)" opacity="${cloudy ? 0.5 : 0.9}"/>`;
+  } else {
+    svg += `<circle cx="860" cy="110" r="46" fill="#eef3f6" opacity="0.85"/>`;
+    for(let i=0;i<18;i++){
+      svg += `<circle cx="${(i*57)%1000}" cy="${(i*83)%260+20}" r="1.6" fill="#ffffff" opacity="${0.3+(i%5)*0.1}"/>`;
+    }
+  }
+
+  if(cloudy){
+    const cloudOp = thunder ? 0.75 : 'var(--cloud-op)';
+    const cloudFill = thunder ? '#5a6b78' : 'var(--cloud)';
+    svg += `<ellipse cx="150" cy="150" rx="140" ry="50" fill="${cloudFill}" opacity="${cloudOp}"/>`;
+    svg += `<ellipse cx="300" cy="190" rx="100" ry="38" fill="${cloudFill}" opacity="${cloudOp}"/>`;
+    svg += `<ellipse cx="700" cy="440" rx="170" ry="55" fill="${cloudFill}" opacity="${cloudOp}"/>`;
+    svg += `<ellipse cx="500" cy="470" rx="110" ry="40" fill="${cloudFill}" opacity="${cloudOp}"/>`;
+  }
+
+  if(rainy){
+    for(let i=0;i<14;i++){
+      const x = (i*71)%1000;
+      svg += `<line x1="${x}" y1="500" x2="${x-14}" y2="560" stroke="var(--accent)" stroke-width="2" opacity="0.35"/>`;
+    }
+  }
+
+  if(snow){
+    for(let i=0;i<26;i++){
+      const x = (i*47)%1000, y = (i*63)%380 + 140, r = 2 + (i%3);
+      svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff" opacity="0.75"/>`;
+    }
+  }
+
+  if(fog){
+    for(let i=0;i<4;i++){
+      const y = 260 + i*60;
+      svg += `<rect x="0" y="${y}" width="1000" height="26" fill="#dfe7ea" opacity="0.4"/>`;
+    }
+  }
+
+  if(thunder){
+    svg += `<polyline points="640,180 610,260 645,260 605,360" fill="none" stroke="var(--sun)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
+  }
+
+  scene.innerHTML = svg;
+}
+
+/* ---------- BAROGRAPH PANEL ---------- */
+function renderBarograph(values){
+  const svg = document.getElementById('baro-svg');
+  if(!values || values.length < 2){ svg.innerHTML=''; return; }
+  const lo = 980, hi = 1040; // fixed UK-typical sea-level pressure range
+  const w = 300, h = 150; // square-ish plot area, strip below for hour labels
+  const pts = values.map((v,i) => {
+    const x = (i/(values.length-1)) * w;
+    const clamped = Math.min(hi, Math.max(lo, v));
+    const y = h - ((clamped - lo)/(hi - lo)) * h;
+    return [x,y];
+  });
+  let svgContent = '';
+  svgContent += `<line x1="0" y1="${h/2}" x2="${w}" y2="${h/2}" class="grid-line"/>`;
+  // hour tick labels: 6 hours ago -> now
+  for(let i=0;i<values.length;i++){
+    const x = (i/(values.length-1)) * w;
+    const hoursAgo = values.length - 1 - i;
+    const label = hoursAgo === 0 ? 'now' : `-${hoursAgo}h`;
+    svgContent += `<text x="${x}" y="${h+22}" font-size="16" font-family="'JetBrains Mono', monospace" fill="var(--ink-faint)" text-anchor="${i===0?'start':(i===values.length-1?'end':'middle')}">${label}</text>`;
+  }
+  svgContent += `<text x="0" y="16" font-size="16" font-family="'JetBrains Mono', monospace" fill="var(--ink-faint)">${hi}</text>`;
+  svgContent += `<text x="0" y="${h-4}" font-size="16" font-family="'JetBrains Mono', monospace" fill="var(--ink-faint)">${lo}</text>`;
+  svgContent += `<polyline class="baro-line" points="${pts.map(p=>p.join(',')).join(' ')}"/>`;
+  const last = pts[pts.length-1];
+  svgContent += `<circle class="baro-dot" cx="${last[0]}" cy="${last[1]}" r="5"/>`;
+  svg.innerHTML = svgContent;
+}
+
+function beaufortForce(kt){
+  const thresholds = [1,4,7,11,17,22,28,34,41,48,56,64]; // upper bound (kt) for forces 0-11
+  for(let f=0; f<thresholds.length; f++){
+    if(kt < thresholds[f]) return f;
+  }
+  return 12;
+}
+
+/* ---------- DATA FETCH: OPEN-METEO ---------- */
+async function updateWeather(){
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
+      `&current=temperature_2m,relative_humidity_2m,surface_pressure,weather_code,wind_speed_10m,wind_direction_10m` +
+      `&hourly=precipitation_probability,surface_pressure` +
+      `&daily=temperature_2m_max&past_hours=6&forecast_hours=1&timezone=Europe%2FLondon&wind_speed_unit=kn`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const temp = Math.round(data.current.temperature_2m * 10) / 10;
+    document.getElementById('temp-val').innerHTML = `${temp}<sup>&deg;C</sup>`;
+
+    const high = Math.round(data.daily.temperature_2m_max[0]);
+    document.getElementById('temp-high').innerHTML = `Max temp <b>${high}<sup>&deg;C</sup></b>`;
+
+    document.getElementById('humidity-val').textContent = `${Math.round(data.current.relative_humidity_2m)}%`;
+    document.getElementById('pressure-val').textContent = `${Math.round(data.current.surface_pressure)} hPa`;
+
+    const windSpeed = Math.round(data.current.wind_speed_10m);
+    const windDir = data.current.wind_direction_10m;
+    document.getElementById('wind-val').textContent = `${windSpeed} kt (F${beaufortForce(windSpeed)})`;
+    // wind_direction is where the wind blows FROM; rotate the arrow to point where it blows TO
+    const windScale = 0.7 + Math.min(windSpeed, 35) / 35 * 1.1; // ~0.7x at calm, ~1.8x at 35kt+
+    document.getElementById('wind-arrow').style.transform =
+      `rotate(${(windDir + 180) % 360}deg) scale(${windScale.toFixed(2)})`;
+
+    // rain probability for the current/next hour
+    const nowIso = new Date().toISOString().slice(0,13);
+    let rainIdx = data.hourly.time.findIndex(t => t.startsWith(nowIso));
+    if(rainIdx === -1) rainIdx = data.hourly.time.length - 1;
+    const rainProb = data.hourly.precipitation_probability[rainIdx];
+    document.getElementById('rain-val').textContent = `${rainProb ?? 0}%`;
+
+    // barograph: last 6 hourly pressure points
+    const pressureSeries = data.hourly.surface_pressure.slice(0, 7);
+    renderBarograph(pressureSeries);
+
+    const isNight = new Date().getHours() >= 20 || new Date().getHours() < 7;
+    renderScene(data.current.weather_code, isNight);
+  } catch(err){
+    console.error('Weather fetch failed', err);
+  }
+}
+
+/* ---------- DATA FETCH: TFL PICCADILLY LINE ---------- */
+async function updateTfl(){
+  try{
+    const res = await fetch('https://api.tfl.gov.uk/Line/piccadilly/Status?detail=false');
+    const data = await res.json();
+    const statuses = data[0]?.lineStatuses || [];
+    const active = statuses.find(s => s.statusSeverityDescription !== 'Good Service');
+    const box = document.getElementById('tfl');
+    if(active){
+      document.getElementById('tfl-text').textContent = `Piccadilly Line: ${active.statusSeverityDescription}`;
+      box.classList.add('show');
+    } else {
+      box.classList.remove('show');
+    }
+  } catch(err){
+    console.error('TfL fetch failed', err);
+  }
+}
+
+/* ---------- BOOT ---------- */
+function refreshAll(){ updateWeather(); updateTfl(); }
+refreshAll();
+setInterval(refreshAll, REFRESH_MS);
+</script>
+</body>
+</html>
