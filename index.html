@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <title>Enfield Weather</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,6 +72,25 @@
   body.night{ --clock-color:#5fa8ff; }
 
   #scene{ position:absolute; inset:0; z-index:0; }
+  @keyframes driftSlow{ from{ transform:translateX(-15px); } to{ transform:translateX(15px); } }
+  @keyframes driftMed{ from{ transform:translateX(-25px); } to{ transform:translateX(20px); } }
+  @keyframes driftFast{ from{ transform:translateX(-35px); } to{ transform:translateX(30px); } }
+  .drift-slow{ animation:driftSlow 40s ease-in-out infinite alternate; }
+  .drift-med{ animation:driftMed 28s ease-in-out infinite alternate; }
+  .drift-fast{ animation:driftFast 18s ease-in-out infinite alternate; }
+  @keyframes twinkle{ 0%,100%{ opacity:0.25; } 50%{ opacity:0.9; } }
+  .star-twinkle{ animation:twinkle 3.5s ease-in-out infinite; }
+  .star-twinkle-slow{ animation:twinkle 6s ease-in-out infinite; }
+  @keyframes sunPulse{ 0%,100%{ opacity:0.95; } 50%{ opacity:0.8; } }
+  .sun-pulse{ animation:sunPulse 6s ease-in-out infinite; transform-origin:830px 460px; }
+  @keyframes rayRotate{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  .sun-ray{ transform-origin:830px 460px; }
+  @keyframes rainFall{ 0%{ opacity:0; } 15%{ opacity:0.5; } 100%{ opacity:0; transform:translateY(20px); } }
+  .rain-drop{ animation:rainFall 0.7s linear infinite; }
+  @keyframes snowFall{ 0%{ transform:translateY(0) translateX(0); } 50%{ transform:translateY(20px) translateX(8px); } 100%{ transform:translateY(40px) translateX(0); } }
+  .snow-drift{ animation:snowFall 6s ease-in-out infinite; }
+  @keyframes boltFlash{ 0%,88%,100%{ opacity:0.15; } 90%,94%{ opacity:1; } }
+  .bolt-flash{ animation:boltFlash 4s ease-in-out infinite; }
 
   .row{ position:relative; z-index:1; display:flex; }
   .top-row{ justify-content:space-between; align-items:flex-start; }
@@ -88,7 +110,8 @@
   .high sup{ font-size:0.5em; font-weight:400; color:var(--ink-soft); }
   body.night .high b{ color:#eef3f6; }
 
-  .stat-col{ display:flex; flex-direction:column; gap:1.8vh; margin-top:2vh; width:72vh; }
+  .stat-col{ display:flex; flex-direction:column; gap:1.8vh; margin-top:2vh; width:72vh; background:rgba(255,255,255,0.55); border-radius:10px; padding:2vh 2.5vw; }
+  body.night .stat-col{ background:rgba(0,0,0,0.28); }
   .stat{ display:flex; align-items:center; justify-content:space-between; gap:1vw; font-size:6vh; color:var(--ink-soft); font-weight:500; white-space:nowrap; padding-bottom:1.8vh; border-bottom:1px solid var(--line); }
   .stat .stat-label{ display:flex; align-items:center; gap:0.8vw; }
   .stat:last-child{ border-bottom:none; padding-bottom:0; }
@@ -174,7 +197,7 @@
 <script>
 /* ---------- CONFIG ---------- */
 const LAT = 51.6523, LON = -0.0809; // Enfield, London
-const ON_HOUR = 7, OFF_HOUR = 0; // display active 07:00–24:00
+const ON_HOUR = 7, OFF_HOUR = 23; // display active 07:00–22:59
 const REFRESH_MS = 10 * 60 * 1000; // 10 minutes
 
 /* ---------- SCREEN ON/OFF WINDOW ---------- */
@@ -215,53 +238,87 @@ function renderScene(weatherCode, isNight){
   const fog = [45,48].includes(weatherCode);
   const rainy = !snow && !thunder && [51,53,55,56,57,61,63,65,66,67,80,81,82].includes(weatherCode);
   const cloudy = [1,2,3].includes(weatherCode) || fog || rainy || snow || thunder;
+  const sx = 830, sy = 460; // sun/moon anchor point
   let svg = '';
 
   if(!isNight){
-    svg += `<circle cx="830" cy="460" r="70" fill="var(--sun)" opacity="${cloudy ? 0.5 : 0.9}"/>`;
+    // soft layered halo (concentric fading rings, no CSS blur needed)
+    svg += `<circle cx="${sx}" cy="${sy}" r="120" fill="var(--sun)" opacity="${cloudy?0.06:0.12}"/>`;
+    svg += `<circle cx="${sx}" cy="${sy}" r="95" fill="var(--sun)" opacity="${cloudy?0.08:0.16}"/>`;
+    // thin rays
+    if(!cloudy){
+      for(let i=0;i<12;i++){
+        const a = (i/12) * Math.PI * 2;
+        const r1 = 82, r2 = 108;
+        const x1 = sx + Math.cos(a)*r1, y1 = sy + Math.sin(a)*r1;
+        const x2 = sx + Math.cos(a)*r2, y2 = sy + Math.sin(a)*r2;
+        svg += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--sun)" stroke-width="3" opacity="0.35" class="sun-ray"/>`;
+      }
+    }
+    svg += `<circle cx="${sx}" cy="${sy}" r="70" fill="var(--sun)" opacity="${cloudy ? 0.55 : 0.95}" class="sun-pulse"/>`;
   } else {
-    svg += `<circle cx="830" cy="460" r="46" fill="#eef3f6" opacity="0.85"/>`;
-    for(let i=0;i<18;i++){
-      svg += `<circle cx="${650 + (i*23)%320}" cy="${300 + (i*41)%280}" r="1.6" fill="#ffffff" opacity="${0.3+(i%5)*0.1}"/>`;
+    svg += `<circle cx="${sx}" cy="${sy}" r="58" fill="#eef3f6" opacity="0.12"/>`;
+    svg += `<circle cx="${sx-8}" cy="${sy-6}" r="46" fill="#eef3f6" opacity="0.9"/>`;
+    svg += `<circle cx="${sx+10}" cy="${sy-10}" r="40" fill="var(--sky-night-bot)" opacity="0.55"/>`; // crescent shading
+    for(let i=0;i<26;i++){
+      const x = 620 + (i*29)%360, y = 260 + (i*53)%320;
+      const r = i%6===0 ? 2.6 : 1.3;
+      const cls = i%6===0 ? 'star-twinkle-slow' : (i%3===0 ? 'star-twinkle' : '');
+      svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff" opacity="${0.3+(i%5)*0.12}" class="${cls}"/>`;
     }
   }
 
   if(cloudy){
-    const cloudOp = thunder ? 0.75 : 'var(--cloud-op)';
-    const cloudFill = thunder ? '#5a6b78' : 'var(--cloud)';
-    svg += `<ellipse cx="150" cy="150" rx="140" ry="50" fill="${cloudFill}" opacity="${cloudOp}"/>`;
-    svg += `<ellipse cx="300" cy="190" rx="100" ry="38" fill="${cloudFill}" opacity="${cloudOp}"/>`;
-    svg += `<ellipse cx="700" cy="440" rx="170" ry="55" fill="${cloudFill}" opacity="${cloudOp}"/>`;
-    svg += `<ellipse cx="500" cy="470" rx="110" ry="40" fill="${cloudFill}" opacity="${cloudOp}"/>`;
+    const cloudOp = thunder ? 0.8 : 0.6;
+    const cloudFill = thunder ? '#5a6b78' : '#ffffff';
+    const shadeFill = thunder ? '#3f4a54' : '#c9d6dc';
+    // each cloud = shading layer (offset) + highlight layer + puffs, grouped for parallax drift
+    const clouds = [
+      {cx:150, cy:150, s:1.0, speed:'drift-slow'},
+      {cx:300, cy:190, s:0.7, speed:'drift-med'},
+      {cx:700, cy:430, s:1.2, speed:'drift-slow'},
+      {cx:500, cy:470, s:0.8, speed:'drift-fast'}
+    ];
+    clouds.forEach(c=>{
+      const rx = 140*c.s, ry = 50*c.s;
+      svg += `<g class="${c.speed}">`;
+      svg += `<ellipse cx="${c.cx+8}" cy="${c.cy+10}" rx="${rx}" ry="${ry}" fill="${shadeFill}" opacity="${cloudOp*0.5}"/>`;
+      svg += `<ellipse cx="${c.cx}" cy="${c.cy}" rx="${rx}" ry="${ry}" fill="${cloudFill}" opacity="${cloudOp}"/>`;
+      svg += `<ellipse cx="${c.cx-rx*0.45}" cy="${c.cy+ry*0.25}" rx="${rx*0.5}" ry="${ry*0.7}" fill="${cloudFill}" opacity="${cloudOp}"/>`;
+      svg += `<ellipse cx="${c.cx+rx*0.5}" cy="${c.cy+ry*0.15}" rx="${rx*0.4}" ry="${ry*0.6}" fill="${cloudFill}" opacity="${cloudOp}"/>`;
+      svg += `<ellipse cx="${c.cx-rx*0.15}" cy="${c.cy-ry*0.35}" rx="${rx*0.4}" ry="${ry*0.5}" fill="${cloudFill}" opacity="${cloudOp*0.9}"/>`;
+      svg += `</g>`;
+    });
   }
 
   if(rainy){
-    for(let i=0;i<14;i++){
-      const x = (i*71)%1000;
-      svg += `<line x1="${x}" y1="500" x2="${x-14}" y2="560" stroke="var(--accent)" stroke-width="2" opacity="0.35"/>`;
+    for(let i=0;i<20;i++){
+      const x = (i*53)%1000, len = 30+(i%4)*8, delay=(i%5)*0.15;
+      svg += `<line x1="${x}" y1="480" x2="${x-12}" y2="${480+len}" stroke="var(--accent)" stroke-width="2" opacity="0.4" class="rain-drop" style="animation-delay:${delay}s"/>`;
     }
   }
 
   if(snow){
-    for(let i=0;i<26;i++){
-      const x = (i*47)%1000, y = (i*63)%380 + 140, r = 2 + (i%3);
-      svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff" opacity="0.75"/>`;
+    for(let i=0;i<32;i++){
+      const x = (i*37)%1000, y = (i*59)%380 + 140, r = 2 + (i%3), delay=(i%6)*0.4;
+      svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff" opacity="0.8" class="snow-drift" style="animation-delay:${delay}s"/>`;
     }
   }
 
   if(fog){
     for(let i=0;i<4;i++){
-      const y = 260 + i*60;
-      svg += `<rect x="0" y="${y}" width="1000" height="26" fill="#dfe7ea" opacity="0.4"/>`;
+      const y = 250 + i*65;
+      svg += `<rect x="-50" y="${y}" width="1100" height="30" rx="15" fill="#dfe7ea" opacity="0.45" class="${i%2===0?'drift-slow':'drift-med'}"/>`;
     }
   }
 
   if(thunder){
-    svg += `<polyline points="640,180 610,260 645,260 605,360" fill="none" stroke="var(--sun)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
+    svg += `<polyline points="640,180 610,260 645,260 605,360" fill="none" stroke="var(--sun)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" opacity="0.9" class="bolt-flash"/>`;
   }
 
   scene.innerHTML = svg;
 }
+
 
 function beaufortForce(kt){
   const thresholds = [1,4,7,11,17,22,28,34,41,48,56,64]; // upper bound (kt) for forces 0-11
