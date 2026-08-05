@@ -128,13 +128,11 @@
     border-radius:8px;
     padding:1.6vh 2vw;
     width:fit-content;
-    position:absolute;
-    bottom:4vh;
-    right:4vw;
     opacity:0;
     visibility:hidden;
     transition:opacity 0.4s ease;
-    z-index:1;
+    position:relative;
+    z-index:2;
   }
   #tfl.show{ opacity:1; visibility:visible; }
   #tfl .dot{ width:2.2vh; height:2.2vh; border-radius:50%; background:var(--alert); flex:none; }
@@ -169,26 +167,28 @@
   </div>
 
   <div>
-    <div class="stat-col">
-      <div class="stat"><span class="stat-label">&#9730; Rain next hour</span> <b id="rain-val">--%</b></div>
-      <div class="stat"><span class="stat-label">&#128167; Humidity</span> <b id="humidity-val">--%</b></div>
-      <div class="stat">
-        <span class="stat-label">
-          <svg id="wind-arrow" width="1em" height="1em" viewBox="0 0 24 24" style="transform:rotate(0deg); transition:transform 0.6s ease; flex:none; align-self:center; transform-origin:center;">
-            <path d="M12 2 L18.5 16 L12 12 L5.5 16 Z" fill="currentColor"/>
-          </svg>
-          Wind
-        </span>
-        <b id="wind-val">-- kt (F-)</b>
+    <div class="row" style="align-items:center; justify-content:space-between;">
+      <div class="stat-col">
+        <div class="stat"><span class="stat-label">&#9730; Rain next hour</span> <b id="rain-val">--%</b></div>
+        <div class="stat"><span class="stat-label">&#128167; Humidity</span> <b id="humidity-val">--%</b></div>
+        <div class="stat">
+          <span class="stat-label">
+            <svg id="wind-arrow" width="1em" height="1em" viewBox="0 0 24 24" style="transform:rotate(0deg); transition:transform 0.6s ease; flex:none; align-self:center; transform-origin:center;">
+              <path d="M12 2 L18.5 16 L12 12 L5.5 16 Z" fill="currentColor"/>
+            </svg>
+            Wind
+          </span>
+          <b id="wind-val">-- kt (F-)</b>
+        </div>
+      </div>
+
+      <div id="tfl">
+        <span class="dot"></span>
+        <span id="tfl-text">Piccadilly Line: —</span>
       </div>
     </div>
 
     <div class="footer">Enfield dashboard &middot; updates every 10 min</div>
-  </div>
-
-  <div id="tfl">
-    <span class="dot"></span>
-    <span id="tfl-text">Piccadilly Line: —</span>
   </div>
 </div>
 
