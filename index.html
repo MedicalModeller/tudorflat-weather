@@ -9,7 +9,7 @@
 <title>Enfield Weather</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --sky-day-top:#cfe4ee;
@@ -97,16 +97,16 @@
   .headline-row{ align-items:flex-end; gap:5vw; margin-top:2vh; }
 
   .clockbox{ text-align:right; position:absolute; top:6vh; right:0; white-space:nowrap; z-index:1; display:flex; flex-direction:column; gap:0.5vh; }
-  .clock-time{ font-size:15vh; font-weight:600; line-height:0.85; color:var(--clock-color); letter-spacing:-2px; }
+  .clock-time{ font-size:15vh; font-weight:600; line-height:0.85; color:var(--clock-color); letter-spacing:-1px; font-family:'Outfit', sans-serif; }
   .clock-date{ font-size:10vh; font-weight:500; line-height:0.9; color:var(--clock-color); letter-spacing:-1px; }
 
   .eyebrow{ font-family:'JetBrains Mono', monospace; font-size:2.1vh; letter-spacing:3px; text-transform:uppercase; color:var(--ink-faint); margin-bottom:1vh; display:flex; align-items:center; gap:0.8vw; }
   .eyebrow .dash{ width:2.2vw; height:1px; background:var(--ink-faint); display:inline-block; }
   .temp-block .label{ font-size:2.6vh; text-transform:uppercase; letter-spacing:2px; color:var(--ink-soft); font-weight:500; margin-bottom:0.5vh; }
-  .temp-value{ font-size:22vh; font-weight:600; line-height:0.85; position:relative; display:inline-block; letter-spacing:-2px; }
+  .temp-value{ font-size:22vh; font-weight:600; line-height:0.85; position:relative; display:inline-block; letter-spacing:-1px; font-family:'Outfit', sans-serif; }
   .temp-value sup{ font-size:0.32em; font-weight:400; color:var(--ink-soft); vertical-align:super; }
   .high{ font-size:5vh; color:var(--ink-soft); font-weight:500; font-family:'JetBrains Mono', monospace; white-space:nowrap; }
-  .high b{ color:var(--ink); font-weight:600; }
+  .high b{ color:var(--ink); font-weight:600; font-family:'Outfit', sans-serif; }
   .high sup{ font-size:0.5em; font-weight:400; color:var(--ink-soft); }
   body.night .high b{ color:#eef3f6; }
 
@@ -115,7 +115,7 @@
   .stat{ display:flex; align-items:center; justify-content:space-between; gap:1vw; font-size:6vh; color:var(--ink-soft); font-weight:500; white-space:nowrap; padding-bottom:1.8vh; border-bottom:1px solid var(--line); }
   .stat .stat-label{ display:flex; align-items:center; gap:0.8vw; }
   .stat:last-child{ border-bottom:none; padding-bottom:0; }
-  .stat b{ color:var(--ink); font-weight:600; font-family:'JetBrains Mono', monospace; text-align:right; }
+  .stat b{ color:var(--ink); font-weight:600; font-family:'Outfit', sans-serif; text-align:right; }
   body.night .stat b{ color:#eef3f6; }
   body.night .stat{ border-bottom-color:rgba(255,255,255,0.14); }
 
