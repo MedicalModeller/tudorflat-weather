@@ -110,6 +110,11 @@
   .high sup{ font-size:0.5em; font-weight:400; color:var(--ink-soft); }
   body.night .high b{ color:#eef3f6; }
 
+  .outlook-row{ display:flex; gap:1.4vw; margin-top:1vh; }
+  .outlook-item{ display:flex; flex-direction:column; align-items:center; gap:0.3vh; }
+  .outlook-item .oi-hour{ font-family:'JetBrains Mono', monospace; font-size:1.6vh; color:var(--ink-faint); }
+  .outlook-item svg{ width:4.2vh; height:4.2vh; display:block; }
+
   .stat-col{ display:flex; flex-direction:column; gap:1.8vh; margin-top:2vh; width:72vh; background:rgba(255,255,255,0.55); border-radius:10px; padding:2vh 2.5vw; position:relative; z-index:2; }
   body.night .stat-col{ background:rgba(0,0,0,0.28); }
   .stat{ display:flex; align-items:center; justify-content:space-between; gap:1vw; font-size:6vh; color:var(--ink-soft); font-weight:500; white-space:nowrap; padding-bottom:1.8vh; border-bottom:1px solid var(--line); }
@@ -158,6 +163,7 @@
       <div class="headline-row" style="margin-top:0; display:flex; flex-direction:column; align-items:flex-start; gap:0.5vh;">
         <span class="temp-value" id="temp-val">--<sup>&deg;C</sup></span>
         <span class="high" id="temp-high">Max temp <b>--<sup>&deg;C</sup></b></span>
+        <div class="outlook-row" id="outlook-row"></div>
       </div>
     </div>
     <div class="clockbox">
@@ -188,7 +194,7 @@
       </div>
     </div>
 
-    <div class="footer">Enfield dashboard &middot; updates every 10 min</div>
+    <div class="footer">Tudorflat dashboard &middot; updates every 10 min</div>
   </div>
 </div>
 
@@ -320,6 +326,53 @@ function renderScene(weatherCode, isNight){
 }
 
 
+/* ---------- COMPACT WEATHER ICON (for the 6-hour outlook row) ---------- */
+function weatherIconSVG(code, isNight){
+  const thunder = [95,96,99].includes(code);
+  const snow = [71,73,75,77,85,86].includes(code);
+  const fog = [45,48].includes(code);
+  const rainy = !snow && !thunder && [51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code);
+  const cloudy = [1,2,3].includes(code) || fog || rainy || snow || thunder;
+  let s = '';
+  if(!isNight){
+    s += `<circle cx="12" cy="10" r="5" fill="var(--sun)" opacity="${cloudy?0.55:0.95}"/>`;
+  } else {
+    s += `<circle cx="12" cy="10" r="4" fill="#eef3f6" opacity="0.9"/>`;
+  }
+  if(cloudy){
+    s += `<ellipse cx="11" cy="15" rx="7" ry="3.2" fill="#ffffff" opacity="0.9" stroke="var(--line)" stroke-width="0.4"/>`;
+  }
+  if(rainy){
+    s += `<line x1="9" y1="19" x2="8" y2="22" stroke="var(--accent)" stroke-width="1.3" opacity="0.7"/>`;
+    s += `<line x1="13" y1="19" x2="12" y2="22" stroke="var(--accent)" stroke-width="1.3" opacity="0.7"/>`;
+  }
+  if(snow){
+    s += `<circle cx="9" cy="20" r="0.9" fill="#8fa2ac"/>`;
+    s += `<circle cx="13" cy="21" r="0.9" fill="#8fa2ac"/>`;
+  }
+  if(fog){
+    s += `<line x1="4" y1="19" x2="20" y2="19" stroke="#8fa2ac" stroke-width="1.3" opacity="0.6"/>`;
+  }
+  if(thunder){
+    s += `<polyline points="12,17 10,21 13,21 11,24" fill="none" stroke="var(--sun)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }
+  return `<svg viewBox="0 0 24 26">${s}</svg>`;
+}
+
+function renderOutlook(times, codes, startIdx){
+  const row = document.getElementById('outlook-row');
+  if(!times || !codes){ row.innerHTML=''; return; }
+  let html = '';
+  for(let i=startIdx; i<Math.min(startIdx+6, times.length); i++){
+    const t = new Date(times[i]);
+    const hh = t.getHours();
+    const label = hh.toString().padStart(2,'0')+':00';
+    const isNight = hh >= 20 || hh < 7;
+    html += `<div class="outlook-item">${weatherIconSVG(codes[i], isNight)}<span class="oi-hour">${label}</span></div>`;
+  }
+  row.innerHTML = html;
+}
+
 function beaufortForce(kt){
   const thresholds = [1,4,7,11,17,22,28,34,41,48,56,64]; // upper bound (kt) for forces 0-11
   for(let f=0; f<thresholds.length; f++){
@@ -333,8 +386,8 @@ async function updateWeather(){
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
       `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m` +
-      `&hourly=precipitation_probability` +
-      `&daily=temperature_2m_max&forecast_hours=1&timezone=Europe%2FLondon&wind_speed_unit=kn`;
+      `&hourly=precipitation_probability,weather_code` +
+      `&daily=temperature_2m_max&forecast_hours=6&timezone=Europe%2FLondon&wind_speed_unit=kn`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -363,6 +416,7 @@ async function updateWeather(){
 
     const isNight = new Date().getHours() >= 20 || new Date().getHours() < 7;
     renderScene(data.current.weather_code, isNight);
+    renderOutlook(data.hourly.time, data.hourly.weather_code, rainIdx);
   } catch(err){
     console.error('Weather fetch failed', err);
   }
@@ -387,7 +441,6 @@ async function updateTfl(){
   }
 }
 
-  
 /* ---------- BOOT ---------- */
 function refreshAll(){ updateWeather(); updateTfl(); }
 refreshAll();
