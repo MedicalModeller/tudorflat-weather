@@ -115,6 +115,8 @@
   .outlook-row{ display:flex; gap:1.8vw; margin-top:1.5vh; }
   .outlook-item{ display:flex; flex-direction:column; align-items:center; gap:0.5vh; }
   .outlook-item .oi-hour{ font-family:'JetBrains Mono', monospace; font-size:2.4vh; color:var(--ink-faint); }
+  .outlook-item .oi-temp{ font-family:'Outfit', sans-serif; font-size:3vh; font-weight:600; color:var(--ink); }
+  body.night .outlook-item .oi-temp{ color:#eef3f6; }
   .outlook-item svg{ width:6.5vh; height:6.5vh; display:block; }
 
   .stat-col{ display:flex; flex-direction:column; gap:1.8vh; margin-top:2vh; width:72vh; background:rgba(255,255,255,0.55); border-radius:10px; padding:2vh 2.5vw; position:relative; z-index:2; }
@@ -372,7 +374,7 @@ function weatherIconSVG(code, isNight, precipProb){
   return `<svg viewBox="0 0 24 26">${s}</svg>`;
 }
 
-function renderOutlook(times, codes, startIdx, precipProbs){
+function renderOutlook(times, codes, startIdx, precipProbs, temps){
   const row = document.getElementById('outlook-row');
   if(!times || !codes){ row.innerHTML=''; return; }
   let html = '';
@@ -382,7 +384,8 @@ function renderOutlook(times, codes, startIdx, precipProbs){
     const label = hh.toString().padStart(2,'0')+':00';
     const isNight = hh >= 20 || hh < 7;
     const pp = precipProbs ? precipProbs[i] : undefined;
-    html += `<div class="outlook-item">${weatherIconSVG(codes[i], isNight, pp)}<span class="oi-hour">${label}</span></div>`;
+    const tempStr = (temps && typeof temps[i] === 'number') ? `${Math.round(temps[i])}&deg;` : '';
+    html += `<div class="outlook-item">${weatherIconSVG(codes[i], isNight, pp)}<span class="oi-temp">${tempStr}</span><span class="oi-hour">${label}</span></div>`;
   }
   row.innerHTML = html;
 }
@@ -400,7 +403,7 @@ async function updateWeather(){
   try{
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
       `&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m` +
-      `&hourly=precipitation_probability,weather_code` +
+      `&hourly=precipitation_probability,weather_code,temperature_2m` +
       `&daily=temperature_2m_max&forecast_hours=6&timezone=Europe%2FLondon&wind_speed_unit=kn`;
     const res = await fetch(url);
     const data = await res.json();
@@ -432,7 +435,7 @@ async function updateWeather(){
 
     const isNight = new Date().getHours() >= 20 || new Date().getHours() < 7;
     renderScene(data.current.weather_code, isNight);
-    renderOutlook(data.hourly.time, data.hourly.weather_code, rainIdx, data.hourly.precipitation_probability);
+    renderOutlook(data.hourly.time, data.hourly.weather_code, rainIdx, data.hourly.precipitation_probability, data.hourly.temperature_2m);
   } catch(err){
     console.error('Weather fetch failed', err);
   }
