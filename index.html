@@ -98,7 +98,8 @@
 
   .clockbox{ text-align:right; position:absolute; top:6vh; right:0; white-space:nowrap; z-index:1; display:flex; flex-direction:column; gap:0.5vh; }
   .clock-time{ font-size:15vh; font-weight:600; line-height:0.85; color:var(--clock-color); letter-spacing:-1px; font-family:'Outfit', sans-serif; }
-  .clock-date{ font-size:10vh; font-weight:500; line-height:0.9; color:var(--clock-color); letter-spacing:-1px; }
+  .clock-day{ font-size:8vh; font-weight:500; line-height:0.95; color:var(--clock-color); letter-spacing:-1px; }
+  .clock-date{ font-size:6vh; font-weight:500; line-height:0.95; color:var(--clock-color); letter-spacing:-1px; }
 
   .eyebrow{ font-family:'JetBrains Mono', monospace; font-size:2.1vh; letter-spacing:3px; text-transform:uppercase; color:var(--ink-faint); margin-bottom:1vh; display:flex; align-items:center; gap:0.8vw; }
   .eyebrow .dash{ width:2.2vw; height:1px; background:var(--ink-faint); display:inline-block; }
@@ -172,6 +173,7 @@
     </div>
     <div class="clockbox">
       <div class="clock-time" id="clock-time">--:--</div>
+      <div class="clock-day" id="clock-day">-</div>
       <div class="clock-date" id="clock-date">-</div>
     </div>
   </div>
@@ -222,6 +224,7 @@ applyScreenWindow();
 
 /* ---------- CLOCK / DATE (both shown together) ---------- */
 const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const fullDayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 function ordinal(n){
   const s = ['th','st','nd','rd'], v = n % 100;
@@ -232,8 +235,9 @@ function renderClock(){
   let hh = now.getHours().toString().padStart(2,'0');
   let mm = now.getMinutes().toString().padStart(2,'0');
   document.getElementById('clock-time').textContent = `${hh}:${mm}`;
+  document.getElementById('clock-day').textContent = fullDayNames[now.getDay()];
   document.getElementById('clock-date').textContent =
-    `${dayNames[now.getDay()]} ${ordinal(now.getDate())} ${monthNames[now.getMonth()]}`;
+    `${ordinal(now.getDate())} ${monthNames[now.getMonth()]}`;
   const isNight = now.getHours() >= 20 || now.getHours() < 7;
   document.body.classList.toggle('night', isNight);
 }
